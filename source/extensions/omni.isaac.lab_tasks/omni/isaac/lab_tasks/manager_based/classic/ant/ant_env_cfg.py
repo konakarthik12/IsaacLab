@@ -43,8 +43,9 @@ class MySceneCfg(InteractiveSceneCfg):
     #     debug_vis=False,
     # )
     terrain = TerrainImporterCfg(
-        prim_path="/World/ground",
-        terrain_type="plane",
+        prim_path="/World/pool",
+        terrain_type="usd",
+        usd_path="/home/kkona/Downloads/fluid_test_2.usd",
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
             friction_combine_mode="average",
@@ -52,8 +53,7 @@ class MySceneCfg(InteractiveSceneCfg):
             static_friction=1.0,
             dynamic_friction=1.0,
             restitution=0.0,
-        ),
-        debug_vis=False,
+        )
     )
 
     # robot
@@ -173,7 +173,7 @@ class TerminationsCfg:
     # (1) Terminate if the episode length is exceeded
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     # (2) Terminate if the robot falls
-    torso_height = DoneTerm(func=mdp.root_height_below_minimum, params={"minimum_height": 0.31})
+    # torso_height = DoneTerm(func=mdp.root_height_below_minimum, params={"minimum_height": 0.001})
 
 
 @configclass
