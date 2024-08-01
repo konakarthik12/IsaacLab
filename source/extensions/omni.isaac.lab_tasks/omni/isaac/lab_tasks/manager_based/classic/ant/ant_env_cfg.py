@@ -28,7 +28,20 @@ from omni.isaac.lab_assets.ant import ANT_CFG  # isort: skip
 class MySceneCfg(InteractiveSceneCfg):
     """Configuration for the terrain scene with an ant robot."""
 
-    # terrain
+    # # terrain
+    # terrain = TerrainImporterCfg(
+    #     prim_path="/World/ground",
+    #     terrain_type="plane",
+    #     collision_group=-1,
+    #     physics_material=sim_utils.RigidBodyMaterialCfg(
+    #         friction_combine_mode="average",
+    #         restitution_combine_mode="average",
+    #         static_friction=1.0,
+    #         dynamic_friction=1.0,
+    #         restitution=0.0,
+    #     ),
+    #     debug_vis=False,
+    # )
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="plane",
