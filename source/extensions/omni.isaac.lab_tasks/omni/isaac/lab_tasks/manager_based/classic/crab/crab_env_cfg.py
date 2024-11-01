@@ -15,7 +15,7 @@ from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
 from omni.isaac.lab.scene import InteractiveSceneCfg
 from omni.isaac.lab.terrains import TerrainImporterCfg
 from omni.isaac.lab.utils import configclass
-
+import torch
 import omni.isaac.lab_tasks.manager_based.classic.humanoid.mdp as mdp
 
 ##
