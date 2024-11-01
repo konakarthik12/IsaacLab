@@ -13,11 +13,11 @@ from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
 
 
 @configclass
-class AntPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+class CrabPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 32
     max_iterations = 1000
     save_interval = 50
-    experiment_name = "ant_direct"
+    experiment_name = "crab_direct"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
