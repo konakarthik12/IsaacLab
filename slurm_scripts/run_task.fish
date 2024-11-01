@@ -8,6 +8,9 @@ set task $argv[1]
 if test $task = "ant"
     echo "running ant task"
     python source/standalone/workflows/rsl_rl/train.py --task Isaac-Ant-Direct-v0 --headless $argv[2..-1]
+else if test $task = "crab"
+    echo "running crab task"
+    python source/standalone/workflows/rsl_rl/train.py --task Isaac-Crab-Direct-v0 --headless $argv[2..-1]
 else
     echo "Task not recognized: $task"
     exit 1
