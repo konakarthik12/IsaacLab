@@ -5,7 +5,7 @@
 
 import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.assets import AssetBaseCfg
-from omni.isaac.lab.envs import ManagerBasedRLEnvCfg
+from omni.isaac.lab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
 from omni.isaac.lab.managers import EventTermCfg as EventTerm
 from omni.isaac.lab.managers import ObservationGroupCfg as ObsGroup
 from omni.isaac.lab.managers import ObservationTermCfg as ObsTerm
@@ -15,7 +15,7 @@ from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
 from omni.isaac.lab.scene import InteractiveSceneCfg
 from omni.isaac.lab.terrains import TerrainImporterCfg
 from omni.isaac.lab.utils import configclass
-
+import torch
 import omni.isaac.lab_tasks.manager_based.classic.humanoid.mdp as mdp
 
 ##
@@ -95,7 +95,18 @@ class ObservationsCfg:
             scale=0.1,
             params={
                 "asset_cfg": SceneEntityCfg(
-                    "robot", body_names=["front_left_foot", "front_right_foot", "left_back_foot", "right_back_foot"]
+                    "robot", body_names=[
+                        "lf_1_1_000",
+                        "lf_2_1_000",
+                        "lf_3_1_000",
+                        "lf_4_1_000",
+                        "lf_5_1_000",
+                        # "rf_1_1_000",
+                        "rf_2_1_000",
+                        "rf_3_1_000",
+                        "rf_4_1_000",
+                        "rf_5_1_000",
+                    ]
                 )
             },
         )
@@ -128,17 +139,28 @@ class EventCfg:
         },
     )
 
+from omni.isaac.lab.envs.mdp import base_pos_z
+
+def height_bonus(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Reward for maintaining height."""
+    height = base_pos_z(env, asset_cfg).squeeze(-1)
+    return height
 
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
 
     # (1) Reward for moving forward
-    progress = RewTerm(func=mdp.progress_reward, weight=1.0, params={"target_pos": (1000.0, 0.0, 0.0)})
+    progress = RewTerm(func=mdp.progress_reward, weight=2.0, params={"target_pos": (1000.0, 0.0, 0.0)})
     # (2) Stay alive bonus
     alive = RewTerm(func=mdp.is_alive, weight=0.5)
-    # (3) Reward for non-upright posture
+    # (3) Reward for upright posture
     upright = RewTerm(func=mdp.upright_posture_bonus, weight=0.1, params={"threshold": 0.93})
+
+    height = RewTerm(func=height_bonus, weight=1.0)
     # (4) Reward for moving in the right direction
     move_to_target = RewTerm(
         func=mdp.move_to_target_bonus, weight=0.5, params={"threshold": 0.8, "target_pos": (1000.0, 0.0, 0.0)}
@@ -146,10 +168,10 @@ class RewardsCfg:
     # (5) Penalty for large action commands
     action_l2 = RewTerm(func=mdp.action_l2, weight=-0.005)
     # (6) Penalty for energy consumption
-    energy = RewTerm(func=mdp.power_consumption, weight=-0.05, params={"gear_ratio": {".*": 15.0}})
+    energy = RewTerm(func=mdp.power_consumption, weight=-0.005, params={"gear_ratio": {".*": 15.0}})
     # (7) Penalty for reaching close to joint limits
     joint_limits = RewTerm(
-        func=mdp.joint_limits_penalty_ratio, weight=-0.1, params={"threshold": 0.99, "gear_ratio": {".*": 15.0}}
+        func=mdp.joint_limits_penalty_ratio, weight=-0.05, params={"threshold": 0.99, "gear_ratio": {".*": 15.0}}
     )
 
 
@@ -160,7 +182,9 @@ class TerminationsCfg:
     # (1) Terminate if the episode length is exceeded
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     # (2) Terminate if the robot falls
-    torso_height = DoneTerm(func=mdp.root_height_below_minimum, params={"minimum_height": 0.31})
+    # torso_height = DoneTerm(func=mdp.root_height_below_minimum, params={"minimum_height": 0.8})
+    # (3) Terminate if the robot is not upright
+    # upright = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": math.radians(90.0)})
 
 
 @configclass
@@ -175,7 +199,7 @@ class CrabEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the MuJoCo-style Crab walking environment."""
 
     # Scene settings
-    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=5.0)
+    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=8.0)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
