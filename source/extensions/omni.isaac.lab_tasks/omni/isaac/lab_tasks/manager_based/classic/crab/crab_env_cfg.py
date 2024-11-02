@@ -21,12 +21,12 @@ import omni.isaac.lab_tasks.manager_based.classic.humanoid.mdp as mdp
 ##
 # Pre-defined configs
 ##
-from omni.isaac.lab_assets.ant import ANT_CFG  # isort: skip
+from omni.isaac.lab_assets.crab import CRAB_CFG  # isort: skip
 
 
 @configclass
 class MySceneCfg(InteractiveSceneCfg):
-    """Configuration for the terrain scene with an ant robot."""
+    """Configuration for the terrain scene with an crab robot."""
 
     # terrain
     terrain = TerrainImporterCfg(
@@ -44,7 +44,7 @@ class MySceneCfg(InteractiveSceneCfg):
     )
 
     # robot
-    robot = ANT_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    robot = CRAB_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
     # lights
     light = AssetBaseCfg(
@@ -171,8 +171,8 @@ class CurriculumCfg:
 
 
 @configclass
-class AntEnvCfg(ManagerBasedRLEnvCfg):
-    """Configuration for the MuJoCo-style Ant walking environment."""
+class CrabEnvCfg(ManagerBasedRLEnvCfg):
+    """Configuration for the MuJoCo-style Crab walking environment."""
 
     # Scene settings
     scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=5.0)
