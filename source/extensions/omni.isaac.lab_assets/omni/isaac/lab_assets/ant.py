@@ -33,9 +33,10 @@ ANT_CFG = ArticulationCfg(
             stabilization_threshold=0.001,
         ),
         copy_from_source=False,
+        scale=[0.045] * 3,
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.5),
+        pos=(0.0, 0.0, 0.5 * 0.045),
         joint_pos={
             ".*_leg": 0.0,
             "front_left_foot": 0.785398,  # 45 degrees
