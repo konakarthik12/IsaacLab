@@ -55,7 +55,7 @@ class AntEnvCfg(DirectRLEnvCfg):
     up_weight: float = 0.1
 
     energy_cost_scale: float = 0.05
-    actions_cost_scale: float = 0.005
+    actions_cost_scale: float = 0.005 * 8
     alive_reward_scale: float = 0.5
     dof_vel_scale: float = 0.2
 
