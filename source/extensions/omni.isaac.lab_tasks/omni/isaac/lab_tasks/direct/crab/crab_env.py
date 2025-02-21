@@ -22,14 +22,14 @@ from omni.isaac.lab_tasks.direct.locomotion.locomotion_env import LocomotionEnv
 class CrabEnvCfg(DirectRLEnvCfg):
     # env
     episode_length_s = 15.0
-    decimation = 2
+    decimation = 4
     action_scale = 0.5
-    action_space = 8
-    observation_space = 36
+    action_space = 18
+    observation_space = 66
     state_space = 0
 
     # simulation
-    sim: SimulationCfg = SimulationCfg(dt=1 / 120, render_interval=decimation)
+    sim: SimulationCfg = SimulationCfg(dt=1 / 250, render_interval=decimation)
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="plane",
@@ -45,7 +45,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     )
 
     # scene
-    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=4.0, replicate_physics=True)
+    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=8.0, replicate_physics=True)
 
     # robot
     robot: ArticulationCfg = CRAB_CFG.replace(prim_path="/World/envs/env_.*/Robot")
@@ -54,7 +54,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     heading_weight: float = 0.5
     up_weight: float = 0.1
 
-    energy_cost_scale: float = 0.05
+    energy_cost_scale: float = 0.005
     actions_cost_scale: float = 0.005
     alive_reward_scale: float = 0.5
     dof_vel_scale: float = 0.2
