@@ -23,7 +23,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     # env
     episode_length_s = 15.0
     decimation = 4
-    action_scale = 0.5
+    action_scale = 0.5 * 1e-4 * 1e-3
     action_space = 18
     observation_space = 66
     state_space = 0
@@ -60,7 +60,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     dof_vel_scale: float = 0.2
 
     death_cost: float = -2.0
-    termination_height: float = 0.31
+    termination_height: float = 0.0005
 
     angular_velocity_scale: float = 1.0
     contact_force_scale: float = 0.1
