@@ -23,7 +23,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     # env
     episode_length_s = 15.0
     decimation = 4
-    action_scale = 5e-5
+    action_scale = 10e-6
     action_space = 18
     observation_space = 66
     state_space = 0
