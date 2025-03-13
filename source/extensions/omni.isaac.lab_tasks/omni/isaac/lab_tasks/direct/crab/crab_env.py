@@ -23,7 +23,11 @@ class CrabEnvCfg(DirectRLEnvCfg):
     # env
     episode_length_s = 15.0
     decimation = 4
-    action_scale = 10e-6
+    # action_scale = 5e-5 (fast
+    # action_scale = 6e-6 (slow, but might still be hard to catch)
+
+
+    action_scale = 6e-6
     action_space = 18
     observation_space = 66
     state_space = 0
@@ -45,7 +49,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     )
 
     # scene
-    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=8.0, replicate_physics=True)
+    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=0.5, replicate_physics=True)
 
     # robot
     robot: ArticulationCfg = CRAB_CFG.replace(prim_path="/World/envs/env_.*/Robot")
