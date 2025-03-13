@@ -60,7 +60,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     dof_vel_scale: float = 0.2
 
     death_cost: float = -2.0
-    termination_height: float = 0.0005
+    termination_height: float = 0.0
 
     angular_velocity_scale: float = 1.0
     contact_force_scale: float = 0.1
