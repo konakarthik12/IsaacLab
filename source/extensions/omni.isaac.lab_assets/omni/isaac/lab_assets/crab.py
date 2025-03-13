@@ -42,15 +42,16 @@ CRAB_CFG = ArticulationCfg(
         copy_from_source=False,
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 5 * 0.0012),
-
+        pos=(0.0, 0.0, 6 * 0.0012),
+        # rotate 90 degrees around the z-axis
+        # rot=(0.707107, 0.0, 0.0, 0.707107),
         joint_pos={
-# ValueError: The following joints have default positions out of the limits:
-#     - 'left_back_001_link_joint': 0.000 not in [0.175, 1.222]
-#     - 'left_back_002_link_joint': 0.000 not in [0.175, 1.222]
-#     - 'left_back_003_link_joint': 0.000 not in [0.175, 1.222]
-#     - 'left_back_004_link_joint': 0.000 not in [0.175, 1.222]
-#     - 'left_front_001_link_joint': 0.000 not in [0.175, 1.222]
+            # ValueError: The following joints have default positions out of the limits:
+            #     - 'left_back_001_link_joint': 0.000 not in [0.175, 1.222]
+            #     - 'left_back_002_link_joint': 0.000 not in [0.175, 1.222]
+            #     - 'left_back_003_link_joint': 0.000 not in [0.175, 1.222]
+            #     - 'left_back_004_link_joint': 0.000 not in [0.175, 1.222]
+            #     - 'left_front_001_link_joint': 0.000 not in [0.175, 1.222]
 
             # ".*_joint": 0.2,
             # "front_left_foot": 0.785398,  # 45 degrees

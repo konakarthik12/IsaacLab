@@ -38,7 +38,9 @@ class LocomotionEnv(DirectRLEnv):
         self.targets += self.scene.env_origins
         self.start_rotation = torch.tensor([1, 0, 0, 0], device=self.sim.device, dtype=torch.float32)
         self.up_vec = torch.tensor([0, 0, 1], dtype=torch.float32, device=self.sim.device).repeat((self.num_envs, 1))
-        self.heading_vec = torch.tensor([1, 0, 0], dtype=torch.float32, device=self.sim.device).repeat(
+        heading_mark = [1, 0, 0]
+        # heading_mark = [0, 1, 0]
+        self.heading_vec = torch.tensor(heading_mark, dtype=torch.float32, device=self.sim.device).repeat(
             (self.num_envs, 1)
         )
         self.inv_start_rot = quat_conjugate(self.start_rotation).repeat((self.num_envs, 1))
@@ -211,7 +213,7 @@ def compute_rewards(
     # reward for duration of staying alive
     alive_reward = torch.ones_like(potentials) * alive_reward_scale
     progress_reward = potentials - prev_potentials
-    progress_reward_scale = 2
+    progress_reward_scale = 4
 
     dof_at_limit_cost_scale = 0.05
     total_reward = (

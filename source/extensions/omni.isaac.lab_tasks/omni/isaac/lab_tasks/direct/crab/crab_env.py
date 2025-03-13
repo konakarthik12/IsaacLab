@@ -23,7 +23,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     # env
     episode_length_s = 15.0
     decimation = 4
-    action_scale = 0.5 * 1e-4 * 1e-3
+    action_scale = 0.9 * 1e-5
     action_space = 18
     observation_space = 66
     state_space = 0
@@ -45,13 +45,13 @@ class CrabEnvCfg(DirectRLEnvCfg):
     )
 
     # scene
-    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=8.0, replicate_physics=True)
+    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=0.15, replicate_physics=True)
 
     # robot
     robot: ArticulationCfg = CRAB_CFG.replace(prim_path="/World/envs/env_.*/Robot")
     joint_gears: list = [15] * 18
 
-    heading_weight: float = 0.5
+    heading_weight: float = 0.9
     up_weight: float = 0.1
 
     energy_cost_scale: float = 0.005
@@ -60,7 +60,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     dof_vel_scale: float = 0.2
 
     death_cost: float = -2.0
-    termination_height: float = 0.0005
+    termination_height: float = 0.0
 
     angular_velocity_scale: float = 1.0
     contact_force_scale: float = 0.1
