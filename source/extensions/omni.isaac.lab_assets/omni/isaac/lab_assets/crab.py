@@ -22,11 +22,12 @@ dirname = os.path.dirname(__file__)
 
 CRAB_USD = path.join(dirname, "crab2.usd")
 # CRAB_USD = "/home/kkona/Documents/research/drone_sim_lab/assets/temp/10joints_v3.usd"
+SCALE = 3
 CRAB_CFG = ArticulationCfg(
     prim_path="{ENV_REGEX_NS}/Robot",
     spawn=sim_utils.UsdFileCfg(
         usd_path=CRAB_USD,
-        scale=[0.0012] * 3,
+        scale=[0.0012 * SCALE] * 3,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
             max_depenetration_velocity=10.0,
@@ -42,7 +43,7 @@ CRAB_CFG = ArticulationCfg(
         copy_from_source=False,
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 5 * 0.0012),
+        pos=(0.0, 0.0, SCALE * 0.024),
         # rotate 90 degrees around the z-axis
         rot=(0.707107, 0.0, 0.0, 0.707107),
         joint_pos={
