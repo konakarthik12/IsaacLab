@@ -27,7 +27,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     # action_scale = 6e-6 (slow, but might still be hard to catch)
 
 
-    action_scale = 6e-6
+    action_scale = 12e-6
     action_space = 18
     observation_space = 66
     state_space = 0
