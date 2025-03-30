@@ -41,6 +41,8 @@ params:
   config:
     name: crab_direct
     env_name: rlgpu
+#    device: 'cuda'
+#    device_name: 'cuda'
     device: 'cpu'
     device_name: 'cpu'
     multi_gpu: False

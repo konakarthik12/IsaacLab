@@ -32,7 +32,9 @@ class CrabEnvCfg(DirectRLEnvCfg):
     state_space = 0
 
     # simulation
-    sim: SimulationCfg = SimulationCfg(dt=1 / 250, render_interval=decimation, device="cpu", use_fabric=False)
+    sim: SimulationCfg = SimulationCfg(dt=1 / 250, render_interval=decimation,
+                                       device="cpu", use_fabric=False
+                                       )
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="plane",
