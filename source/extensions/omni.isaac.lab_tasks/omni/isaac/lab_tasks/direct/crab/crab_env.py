@@ -26,10 +26,9 @@ class CrabEnvCfg(DirectRLEnvCfg):
     # action_scale = 5e-5 (fast
     # action_scale = 6e-6 (slow, but might still be hard to catch)
 
-
     action_scale = 12e-6
     action_space = 18
-    observation_space = 66
+    observation_space = 68
     state_space = 0
 
     # simulation
@@ -64,6 +63,7 @@ class CrabEnvCfg(DirectRLEnvCfg):
     dof_vel_scale: float = 0.2
 
     death_cost: float = -2.0
+    success_reward: float = 2.0
     termination_height: float = 0.0
 
     angular_velocity_scale: float = 1.0

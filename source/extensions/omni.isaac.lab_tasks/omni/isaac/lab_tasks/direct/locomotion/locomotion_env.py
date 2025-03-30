@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import torch
 
 import omni.isaac.core.utils.torch as torch_utils
@@ -13,6 +15,8 @@ from omni.isaac.core.utils.torch.rotations import compute_heading_and_up, comput
 import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.assets import Articulation
 from omni.isaac.lab.envs import DirectRLEnv, DirectRLEnvCfg
+if TYPE_CHECKING:
+    from omni.isaac.lab_tasks.direct.crab.crab_env import CrabEnvCfg
 
 
 def normalize_angle(x):
@@ -20,7 +24,7 @@ def normalize_angle(x):
 
 
 class LocomotionEnv(DirectRLEnv):
-    cfg: DirectRLEnvCfg
+    cfg: CrabEnvCfg
 
     def __init__(self, cfg: DirectRLEnvCfg, render_mode: str | None = None, **kwargs):
         super().__init__(cfg, render_mode, **kwargs)
@@ -47,6 +51,18 @@ class LocomotionEnv(DirectRLEnv):
         self.basis_vec0 = self.heading_vec.clone()
         self.basis_vec1 = self.up_vec.clone()
 
+        # self.global_boundary_lower = torch.tensor([-1000, -1000, -1000], dtype=torch.float32,
+        #                                           device=self.sim.device).repeat((self.num_envs, 1))
+        # self.global_boundary_upper = torch.tensor([1000, 1000, 1000], dtype=torch.float32,
+        #                                           device=self.sim.device).repeat((self.num_envs, 1))
+
+        self.reset_counter = torch.zeros(self.num_envs, dtype=torch.int32, device=self.sim.device)
+
+        self.died = torch.zeros(self.num_envs, dtype=torch.bool, device=self.sim.device)
+        self.reached_destination = torch.zeros(self.num_envs, dtype=torch.bool, device=self.sim.device)
+
+        self.to_target = torch.zeros_like(self.targets)
+
     def _setup_scene(self):
         self.robot = Articulation(self.cfg.robot)
         # add ground plane
@@ -69,6 +85,7 @@ class LocomotionEnv(DirectRLEnv):
         forces = self.action_scale * self.joint_gears * self.actions
         self.robot.set_joint_effort_target(forces, joint_ids=self._joint_dof_idx)
 
+
     def _compute_intermediate_values(self):
         self.torso_position, self.torso_rotation = self.robot.data.root_link_pos_w, self.robot.data.root_link_quat_w
         self.velocity, self.ang_velocity = self.robot.data.root_com_lin_vel_w, self.robot.data.root_com_ang_vel_w
@@ -88,6 +105,7 @@ class LocomotionEnv(DirectRLEnv):
             self.dof_pos_scaled,
             self.prev_potentials,
             self.potentials,
+            self.to_target
         ) = compute_intermediate_values(
             self.targets,
             self.torso_position,
@@ -114,6 +132,7 @@ class LocomotionEnv(DirectRLEnv):
                 normalize_angle(self.yaw).unsqueeze(-1),
                 normalize_angle(self.roll).unsqueeze(-1),
                 normalize_angle(self.angle_to_target).unsqueeze(-1),
+                self.to_target[:, :2],
                 self.up_proj.unsqueeze(-1),
                 self.heading_proj.unsqueeze(-1),
                 self.dof_pos_scaled,
@@ -128,7 +147,8 @@ class LocomotionEnv(DirectRLEnv):
     def _get_rewards(self) -> torch.Tensor:
         total_reward = compute_rewards(
             self.actions,
-            self.reset_terminated,
+            self.died,
+            self.reached_destination,
             self.cfg.up_weight,
             self.cfg.heading_weight,
             self.heading_proj,
@@ -141,6 +161,7 @@ class LocomotionEnv(DirectRLEnv):
             self.cfg.energy_cost_scale,
             self.cfg.dof_vel_scale,
             self.cfg.death_cost,
+            self.cfg.success_reward,
             self.cfg.alive_reward_scale,
             self.motor_effort_ratio,
         )
@@ -150,22 +171,34 @@ class LocomotionEnv(DirectRLEnv):
         self._compute_intermediate_values()
         time_out = self.episode_length_buf >= self.max_episode_length - 1
         died = self.torso_position[:, 2] < self.cfg.termination_height
-        return died, time_out
+        self.died = died
+        reached_destination = torch.norm(self.targets - self.torso_position[:, :3], p=2, dim=-1) < 0.5
+        self.reached_destination = reached_destination
+
+        return died | reached_destination, time_out
 
     def _reset_idx(self, env_ids: torch.Tensor | None):
         if env_ids is None or len(env_ids) == self.num_envs:
             env_ids = self.robot._ALL_INDICES
+        self.reset_counter[env_ids] += 1
+        soft_reset = self.reset_counter[env_ids] % 10 != 0
+        soft_reset_ids = env_ids[soft_reset]
+
+        soft_robot_xy = self.robot.data.root_link_pos_w[soft_reset_ids, :2]
         self.robot.reset(env_ids)
         super()._reset_idx(env_ids)
-
         joint_pos = self.robot.data.default_joint_pos[env_ids]
         joint_vel = self.robot.data.default_joint_vel[env_ids]
         default_root_state = self.robot.data.default_root_state[env_ids]
         default_root_state[:, :3] += self.scene.env_origins[env_ids]
+        if len(soft_reset_ids) > 0:
+            default_root_state[:, :2] = torch.where(soft_reset.unsqueeze(-1), soft_robot_xy, default_root_state[:, :2])
 
         self.robot.write_root_link_pose_to_sim(default_root_state[:, :7], env_ids)
         self.robot.write_root_com_velocity_to_sim(default_root_state[:, 7:], env_ids)
         self.robot.write_joint_state_to_sim(joint_pos, joint_vel, None, env_ids)
+
+        self.sample_next_goal(env_ids)
 
         to_target = self.targets[env_ids] - default_root_state[:, :3]
         to_target[:, 2] = 0.0
@@ -173,25 +206,39 @@ class LocomotionEnv(DirectRLEnv):
 
         self._compute_intermediate_values()
 
+    def sample_next_goal(self, env_ids: torch.Tensor | None):
+
+        if env_ids is None or len(env_ids) == self.num_envs:
+            env_ids = self.robot._ALL_INDICES
+
+        current_root_pos_w = self.robot.data.root_link_pos_w[env_ids]
+        self.targets[env_ids] = current_root_pos_w + torch.randn_like(current_root_pos_w) * 10.0
+        self.targets[env_ids, 2] = 0.0
+
+        # self.targets[env_ids] = torch.clamp(self.targets[env_ids], self.global_boundary_lower,
+        #                                     self.global_boundary_upper)
+
 
 @torch.jit.script
 def compute_rewards(
-    actions: torch.Tensor,
-    reset_terminated: torch.Tensor,
-    up_weight: float,
-    heading_weight: float,
-    heading_proj: torch.Tensor,
-    up_proj: torch.Tensor,
-    dof_vel: torch.Tensor,
-    dof_pos_scaled: torch.Tensor,
-    potentials: torch.Tensor,
-    prev_potentials: torch.Tensor,
-    actions_cost_scale: float,
-    energy_cost_scale: float,
-    dof_vel_scale: float,
-    death_cost: float,
-    alive_reward_scale: float,
-    motor_effort_ratio: torch.Tensor,
+        actions: torch.Tensor,
+        died: torch.Tensor,
+        reached_destination: torch.Tensor,
+        up_weight: float,
+        heading_weight: float,
+        heading_proj: torch.Tensor,
+        up_proj: torch.Tensor,
+        dof_vel: torch.Tensor,
+        dof_pos_scaled: torch.Tensor,
+        potentials: torch.Tensor,
+        prev_potentials: torch.Tensor,
+        actions_cost_scale: float,
+        energy_cost_scale: float,
+        dof_vel_scale: float,
+        death_cost: float,
+        success_reward: float,
+        alive_reward_scale: float,
+        motor_effort_ratio: torch.Tensor,
 ):
     heading_weight_tensor = torch.ones_like(heading_proj) * heading_weight
     heading_reward = torch.where(heading_proj > 0.8, heading_weight_tensor, heading_weight * heading_proj / 0.8)
@@ -201,7 +248,7 @@ def compute_rewards(
     up_reward = torch.where(up_proj > 0.93, up_reward + up_weight, up_reward)
 
     # energy penalty for movement
-    actions_cost = torch.sum(actions**2, dim=-1)
+    actions_cost = torch.sum(actions ** 2, dim=-1)
     electricity_cost = torch.sum(
         torch.abs(actions * dof_vel * dof_vel_scale) * motor_effort_ratio.unsqueeze(0),
         dim=-1,
@@ -217,35 +264,39 @@ def compute_rewards(
 
     dof_at_limit_cost_scale = 0.05
     total_reward = (
-        progress_reward * progress_reward_scale
-        + alive_reward
-        + up_reward
-        + heading_reward
-        - actions_cost_scale * actions_cost
-        - energy_cost_scale * electricity_cost
-        - dof_at_limit_cost_scale * dof_at_limit_cost
+            progress_reward * progress_reward_scale
+            + alive_reward
+            + up_reward
+            # + heading_reward
+            - actions_cost_scale * actions_cost
+            - energy_cost_scale * electricity_cost
+            - dof_at_limit_cost_scale * dof_at_limit_cost
     )
     # adjust reward for fallen agents
-    total_reward = torch.where(reset_terminated, torch.ones_like(total_reward) * death_cost, total_reward)
+    total_reward = torch.where(died, torch.ones_like(total_reward) * death_cost, total_reward)
+
+    # adjust reward for agents that reached the destination
+    total_reward = torch.where(reached_destination, torch.ones_like(total_reward) * success_reward, total_reward)
+
     return total_reward
 
 
 @torch.jit.script
 def compute_intermediate_values(
-    targets: torch.Tensor,
-    torso_position: torch.Tensor,
-    torso_rotation: torch.Tensor,
-    velocity: torch.Tensor,
-    ang_velocity: torch.Tensor,
-    dof_pos: torch.Tensor,
-    dof_lower_limits: torch.Tensor,
-    dof_upper_limits: torch.Tensor,
-    inv_start_rot: torch.Tensor,
-    basis_vec0: torch.Tensor,
-    basis_vec1: torch.Tensor,
-    potentials: torch.Tensor,
-    prev_potentials: torch.Tensor,
-    dt: float,
+        targets: torch.Tensor,
+        torso_position: torch.Tensor,
+        torso_rotation: torch.Tensor,
+        velocity: torch.Tensor,
+        ang_velocity: torch.Tensor,
+        dof_pos: torch.Tensor,
+        dof_lower_limits: torch.Tensor,
+        dof_upper_limits: torch.Tensor,
+        inv_start_rot: torch.Tensor,
+        basis_vec0: torch.Tensor,
+        basis_vec1: torch.Tensor,
+        potentials: torch.Tensor,
+        prev_potentials: torch.Tensor,
+        dt: float,
 ):
     to_target = targets - torso_position
     to_target[:, 2] = 0.0
@@ -279,4 +330,5 @@ def compute_intermediate_values(
         dof_pos_scaled,
         prev_potentials,
         potentials,
+        to_target,
     )

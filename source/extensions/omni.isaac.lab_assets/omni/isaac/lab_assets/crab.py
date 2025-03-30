@@ -45,7 +45,7 @@ CRAB_CFG = ArticulationCfg(
     init_state=ArticulationCfg.InitialStateCfg(
         pos=(0.0, 0.0, SCALE * 0.024),
         # rotate 90 degrees around the z-axis
-        rot=(0.707107, 0.0, 0.0, 0.707107),
+        # rot=(0.707107, 0.0, 0.0, 0.707107),
         joint_pos={
 # ValueError: The following joints have default positions out of the limits:
 #     - 'left_back_001_link_joint': 0.000 not in [0.175, 1.222]
