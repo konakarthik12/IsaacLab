@@ -15,6 +15,7 @@ from omni.isaac.core.utils.torch.rotations import compute_heading_and_up, comput
 import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.assets import Articulation
 from omni.isaac.lab.envs import DirectRLEnv, DirectRLEnvCfg
+
 if TYPE_CHECKING:
     from omni.isaac.lab_tasks.direct.crab.crab_env import CrabEnvCfg
 
@@ -51,11 +52,6 @@ class LocomotionEnv(DirectRLEnv):
         self.basis_vec0 = self.heading_vec.clone()
         self.basis_vec1 = self.up_vec.clone()
 
-        # self.global_boundary_lower = torch.tensor([-1000, -1000, -1000], dtype=torch.float32,
-        #                                           device=self.sim.device).repeat((self.num_envs, 1))
-        # self.global_boundary_upper = torch.tensor([1000, 1000, 1000], dtype=torch.float32,
-        #                                           device=self.sim.device).repeat((self.num_envs, 1))
-
         self.reset_counter = torch.zeros(self.num_envs, dtype=torch.int32, device=self.sim.device)
 
         self.died = torch.zeros(self.num_envs, dtype=torch.bool, device=self.sim.device)
@@ -84,7 +80,6 @@ class LocomotionEnv(DirectRLEnv):
     def _apply_action(self):
         forces = self.action_scale * self.joint_gears * self.actions
         self.robot.set_joint_effort_target(forces, joint_ids=self._joint_dof_idx)
-
 
     def _compute_intermediate_values(self):
         self.torso_position, self.torso_rotation = self.robot.data.root_link_pos_w, self.robot.data.root_link_quat_w
@@ -214,9 +209,6 @@ class LocomotionEnv(DirectRLEnv):
         current_root_pos_w = self.robot.data.root_link_pos_w[env_ids]
         self.targets[env_ids] = current_root_pos_w + torch.randn_like(current_root_pos_w) * 10.0
         self.targets[env_ids, 2] = 0.0
-
-        # self.targets[env_ids] = torch.clamp(self.targets[env_ids], self.global_boundary_lower,
-        #                                     self.global_boundary_upper)
 
 
 @torch.jit.script
