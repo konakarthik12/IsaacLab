@@ -17,7 +17,8 @@ from omni.isaac.lab.assets import Articulation
 from omni.isaac.lab.envs import DirectRLEnv, DirectRLEnvCfg
 
 if TYPE_CHECKING:
-    from omni.isaac.lab_tasks.direct.crab.crab_env import CrabEnvCfg
+    from omni.isaac.lab_tasks.direct.ant.ant_env import AntEnvCfg
+
 
 
 def normalize_angle(x):
@@ -25,7 +26,7 @@ def normalize_angle(x):
 
 
 class LocomotionEnv(DirectRLEnv):
-    cfg: CrabEnvCfg
+    cfg: AntEnvCfg
 
     def __init__(self, cfg: DirectRLEnvCfg, render_mode: str | None = None, **kwargs):
         super().__init__(cfg, render_mode, **kwargs)
@@ -201,7 +202,7 @@ class LocomotionEnv(DirectRLEnv):
 
         self._compute_intermediate_values()
 
-    def sample_next_goal(self, env_ids: torch.Tensor | None):
+    def sample_next_goal(self, env_ids: torch.Tensor | None = None):
 
         if env_ids is None or len(env_ids) == self.num_envs:
             env_ids = self.robot._ALL_INDICES

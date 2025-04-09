@@ -12,14 +12,14 @@ from omni.isaac.lab.assets import ArticulationCfg
 from omni.isaac.lab.envs import DirectRLEnvCfg
 from omni.isaac.lab.scene import InteractiveSceneCfg
 from omni.isaac.lab.sim import SimulationCfg
-from omni.isaac.lab.terrains import TerrainImporterCfg
+from omni.isaac.lab_tasks.direct.ant.ant_env import AntEnvCfg
 from omni.isaac.lab.utils import configclass
 
 from omni.isaac.lab_tasks.direct.locomotion.locomotion_env import LocomotionEnv
 
 
 @configclass
-class CrabEnvCfg(DirectRLEnvCfg):
+class CrabEnvCfg(AntEnvCfg):
     # env
     episode_length_s = 15.0
     decimation = 4
@@ -35,19 +35,19 @@ class CrabEnvCfg(DirectRLEnvCfg):
     sim: SimulationCfg = SimulationCfg(dt=1 / 250, render_interval=decimation,
                                        device="cpu", use_fabric=False
                                        )
-    terrain = TerrainImporterCfg(
-        prim_path="/World/ground",
-        terrain_type="plane",
-        collision_group=-1,
-        physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="average",
-            restitution_combine_mode="average",
-            static_friction=1.0,
-            dynamic_friction=1.0,
-            restitution=0.0,
-        ),
-        debug_vis=False,
-    )
+    # terrain = TerrainImporterCfg(
+    #     prim_path="/World/ground",
+    #     terrain_type="plane",
+    #     collision_group=-1,
+    #     physics_material=sim_utils.RigidBodyMaterialCfg(
+    #         friction_combine_mode="average",
+    #         restitution_combine_mode="average",
+    #         static_friction=1.0,
+    #         dynamic_friction=1.0,
+    #         restitution=0.0,
+    #     ),
+    #     debug_vis=False,
+    # )
 
     # scene
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=0.5, replicate_physics=True)
