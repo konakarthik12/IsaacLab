@@ -43,6 +43,8 @@ params:
     env_name: rlgpu
     device: 'cpu'
     device_name: 'cpu'
+    #    device: 'cuda:0'
+    #    device_name: 'cuda:0'
     multi_gpu: False
     ppo: True
     mixed_precision: True

@@ -29,7 +29,10 @@ class AntEnvCfg(DirectRLEnvCfg):
     state_space = 0
 
     # simulation
-    sim: SimulationCfg = SimulationCfg(dt=1 / 250, render_interval=decimation, device="cpu", use_fabric=False)
+    sim: SimulationCfg = SimulationCfg(dt=1 / 250, render_interval=decimation,
+                                       device="cpu", use_fabric=False,
+                                       # device="cuda:0", use_fabric=True,
+                                       )
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="plane",
