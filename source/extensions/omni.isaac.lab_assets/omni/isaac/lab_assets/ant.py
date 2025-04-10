@@ -37,6 +37,7 @@ ANT_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         pos=(0.0, 0.0, 0.5 * 0.045),
+        rot=(-0.707107, 0.0, 0.0, 0.707107),
         joint_pos={
             ".*_leg": 0.0,
             "front_left_foot": 0.785398,  # 45 degrees
