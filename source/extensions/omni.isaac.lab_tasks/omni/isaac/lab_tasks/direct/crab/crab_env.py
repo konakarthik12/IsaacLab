@@ -5,29 +5,26 @@
 
 from __future__ import annotations
 
-from omni.isaac.lab_assets.crab import CRAB_CFG
-
 import omni.isaac.lab.sim as sim_utils
 from omni.isaac.lab.assets import ArticulationCfg
-from omni.isaac.lab.envs import DirectRLEnvCfg
+from omni.isaac.lab.envs import ViewerCfg
 from omni.isaac.lab.scene import InteractiveSceneCfg
 from omni.isaac.lab.sim import SimulationCfg
 from omni.isaac.lab.terrains import TerrainImporterCfg
 from omni.isaac.lab.utils import configclass
-
+from omni.isaac.lab_assets.crab import CRAB_CFG
+from omni.isaac.lab_tasks.direct.ant.ant_env import AntEnvCfg
 from omni.isaac.lab_tasks.direct.locomotion.locomotion_env import LocomotionEnv
 
 
 @configclass
-class CrabEnvCfg(DirectRLEnvCfg):
+class CrabEnvCfg(AntEnvCfg):
     # env
     episode_length_s = 15.0
     decimation = 4
-    # action_scale = 5e-5 (fast
-    # action_scale = 6e-6 (slow, but might still be hard to catch)
 
-
-    action_scale = 12e-6
+    # action_scale = 6e-4 (works but way too fast)
+    action_scale = 2e-4
     action_space = 18
     observation_space = 66
     state_space = 0
@@ -69,6 +66,11 @@ class CrabEnvCfg(DirectRLEnvCfg):
 
     angular_velocity_scale: float = 1.0
     contact_force_scale: float = 0.1
+
+    viewer = ViewerCfg(
+        eye=(4, -2, 0.5),
+        lookat=(0.0, 0.0, 0.0),
+    )
 
 
 class CrabEnv(LocomotionEnv):
