@@ -64,7 +64,8 @@ class CrabEnvCfg(DirectRLEnvCfg):
     dof_vel_scale: float = 0.2
 
     death_cost: float = -2.0
-    termination_height: float = 0.0
+    # Kill the crab if it is upside down
+    termination_up_proj: float = -0.5
 
     angular_velocity_scale: float = 1.0
     contact_force_scale: float = 0.1

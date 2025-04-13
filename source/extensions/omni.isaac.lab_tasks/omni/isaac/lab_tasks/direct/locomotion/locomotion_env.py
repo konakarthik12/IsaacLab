@@ -5,14 +5,18 @@
 
 from __future__ import annotations
 
-import torch
+from typing import TYPE_CHECKING
 
 import omni.isaac.core.utils.torch as torch_utils
-from omni.isaac.core.utils.torch.rotations import compute_heading_and_up, compute_rot, quat_conjugate
-
 import omni.isaac.lab.sim as sim_utils
+import torch
+from omni.isaac.core.utils.torch.rotations import compute_heading_and_up, compute_rot, quat_conjugate
 from omni.isaac.lab.assets import Articulation
 from omni.isaac.lab.envs import DirectRLEnv, DirectRLEnvCfg
+
+if TYPE_CHECKING:
+    from omni.isaac.lab_tasks.direct.ant.ant_env import AntEnvCfg
+    from omni.isaac.lab_tasks.direct.crab.crab_env import CrabEnvCfg
 
 
 def normalize_angle(x):
@@ -20,7 +24,7 @@ def normalize_angle(x):
 
 
 class LocomotionEnv(DirectRLEnv):
-    cfg: DirectRLEnvCfg
+    cfg: CrabEnvCfg | AntEnvCfg
 
     def __init__(self, cfg: DirectRLEnvCfg, render_mode: str | None = None, **kwargs):
         super().__init__(cfg, render_mode, **kwargs)
@@ -149,7 +153,8 @@ class LocomotionEnv(DirectRLEnv):
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         self._compute_intermediate_values()
         time_out = self.episode_length_buf >= self.max_episode_length - 1
-        died = self.torso_position[:, 2] < self.cfg.termination_height
+        # died = self.torso_position[:, 2] < self.cfg.termination_height
+        died = self.up_proj < self.cfg.termination_up_proj
         return died, time_out
 
     def _reset_idx(self, env_ids: torch.Tensor | None):
@@ -176,22 +181,22 @@ class LocomotionEnv(DirectRLEnv):
 
 @torch.jit.script
 def compute_rewards(
-    actions: torch.Tensor,
-    reset_terminated: torch.Tensor,
-    up_weight: float,
-    heading_weight: float,
-    heading_proj: torch.Tensor,
-    up_proj: torch.Tensor,
-    dof_vel: torch.Tensor,
-    dof_pos_scaled: torch.Tensor,
-    potentials: torch.Tensor,
-    prev_potentials: torch.Tensor,
-    actions_cost_scale: float,
-    energy_cost_scale: float,
-    dof_vel_scale: float,
-    death_cost: float,
-    alive_reward_scale: float,
-    motor_effort_ratio: torch.Tensor,
+        actions: torch.Tensor,
+        reset_terminated: torch.Tensor,
+        up_weight: float,
+        heading_weight: float,
+        heading_proj: torch.Tensor,
+        up_proj: torch.Tensor,
+        dof_vel: torch.Tensor,
+        dof_pos_scaled: torch.Tensor,
+        potentials: torch.Tensor,
+        prev_potentials: torch.Tensor,
+        actions_cost_scale: float,
+        energy_cost_scale: float,
+        dof_vel_scale: float,
+        death_cost: float,
+        alive_reward_scale: float,
+        motor_effort_ratio: torch.Tensor,
 ):
     heading_weight_tensor = torch.ones_like(heading_proj) * heading_weight
     heading_reward = torch.where(heading_proj > 0.8, heading_weight_tensor, heading_weight * heading_proj / 0.8)
@@ -201,7 +206,7 @@ def compute_rewards(
     up_reward = torch.where(up_proj > 0.93, up_reward + up_weight, up_reward)
 
     # energy penalty for movement
-    actions_cost = torch.sum(actions**2, dim=-1)
+    actions_cost = torch.sum(actions ** 2, dim=-1)
     electricity_cost = torch.sum(
         torch.abs(actions * dof_vel * dof_vel_scale) * motor_effort_ratio.unsqueeze(0),
         dim=-1,
@@ -217,13 +222,13 @@ def compute_rewards(
 
     dof_at_limit_cost_scale = 0.05
     total_reward = (
-        progress_reward * progress_reward_scale
-        + alive_reward
-        + up_reward
-        + heading_reward
-        - actions_cost_scale * actions_cost
-        - energy_cost_scale * electricity_cost
-        - dof_at_limit_cost_scale * dof_at_limit_cost
+            progress_reward * progress_reward_scale
+            + alive_reward
+            + up_reward
+            + heading_reward
+            - actions_cost_scale * actions_cost
+            - energy_cost_scale * electricity_cost
+            - dof_at_limit_cost_scale * dof_at_limit_cost
     )
     # adjust reward for fallen agents
     total_reward = torch.where(reset_terminated, torch.ones_like(total_reward) * death_cost, total_reward)
@@ -232,20 +237,20 @@ def compute_rewards(
 
 @torch.jit.script
 def compute_intermediate_values(
-    targets: torch.Tensor,
-    torso_position: torch.Tensor,
-    torso_rotation: torch.Tensor,
-    velocity: torch.Tensor,
-    ang_velocity: torch.Tensor,
-    dof_pos: torch.Tensor,
-    dof_lower_limits: torch.Tensor,
-    dof_upper_limits: torch.Tensor,
-    inv_start_rot: torch.Tensor,
-    basis_vec0: torch.Tensor,
-    basis_vec1: torch.Tensor,
-    potentials: torch.Tensor,
-    prev_potentials: torch.Tensor,
-    dt: float,
+        targets: torch.Tensor,
+        torso_position: torch.Tensor,
+        torso_rotation: torch.Tensor,
+        velocity: torch.Tensor,
+        ang_velocity: torch.Tensor,
+        dof_pos: torch.Tensor,
+        dof_lower_limits: torch.Tensor,
+        dof_upper_limits: torch.Tensor,
+        inv_start_rot: torch.Tensor,
+        basis_vec0: torch.Tensor,
+        basis_vec1: torch.Tensor,
+        potentials: torch.Tensor,
+        prev_potentials: torch.Tensor,
+        dt: float,
 ):
     to_target = targets - torso_position
     to_target[:, 2] = 0.0
