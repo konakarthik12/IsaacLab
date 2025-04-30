@@ -43,7 +43,7 @@ CRAB_CFG = ArticulationCfg(
         copy_from_source=False,
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, SCALE * 0.024),
+        pos=(0.0, 0.0, SCALE * 0.024 + 0.035),
         # rotate 90 degrees around the z-axis
         rot=(0.707107, 0.0, 0.0, 0.707107),
         joint_pos={

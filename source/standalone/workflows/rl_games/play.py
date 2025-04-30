@@ -59,6 +59,24 @@ from omni.isaac.lab_tasks.utils import get_checkpoint_path, load_cfg_from_regist
 from omni.isaac.lab_tasks.utils.wrappers.rl_games import RlGamesGpuEnv, RlGamesVecEnvWrapper
 
 
+torch.set_printoptions(precision=16, sci_mode=False)
+
+def sha1_array(arr):
+    import hashlib
+
+    # Ensure tensor is in CPU memory and convert to NumPy
+    from numpy import ndarray
+    tensor_np: ndarray = arr.detach().cpu().numpy()
+
+    # Convert tensor to bytes
+    tensor_bytes = tensor_np.tobytes()
+    # print(len(tensor_bytes), list(tensor_bytes))
+
+    # Compute SHA-1 hash
+    sha1_hash = hashlib.sha1(tensor_bytes).hexdigest()
+
+    return sha1_hash
+
 def main():
     """Play with RL-Games agent."""
     # parse env configuration
@@ -66,7 +84,9 @@ def main():
         args_cli.task, device=args_cli.device, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
     )
     agent_cfg = load_cfg_from_registry(args_cli.task, "rl_games_cfg_entry_point")
-
+    pos_x, pos_y, pos_z = env_cfg.robot.init_state.pos
+    # pos_x = 6
+    env_cfg.robot.init_state.pos = (pos_x, pos_y, pos_z)
     # specify directory for logging experiments
     log_root_path = os.path.join("logs", "rl_games", agent_cfg["params"]["config"]["name"])
     log_root_path = os.path.abspath(log_root_path)
@@ -137,14 +157,19 @@ def main():
 
     # reset environment
     obs = env.reset()
+
     if isinstance(obs, dict):
         obs = obs["obs"]
+    # print("obs", obs)
+    # print(sha1_array(obs))
+    # exit()
     timestep = 0
     # required: enables the flag for batched observations
     _ = agent.get_batch_size(obs, 1)
     # initialize RNN states if used
     if agent.is_rnn:
         agent.init_rnn()
+    # count = 0
     # simulate environment
     # note: We simplified the logic in rl-games player.py (:func:`BasePlayer.run()`) function in an
     #   attempt to have complete control over environment stepping. However, this removes other
@@ -156,6 +181,14 @@ def main():
             obs = agent.obs_to_torch(obs)
             # agent stepping
             actions = agent.get_action(obs, is_deterministic=agent.is_deterministic)
+            # print("obs", obs)
+            # print("actions", actions)
+            # print(sha1_array(obs))
+            # print(sha1_array(actions))
+
+            # count += 1
+            # break
+            # if count > 3: break
             # env stepping
             obs, _, dones, _ = env.step(actions)
 
@@ -170,7 +203,8 @@ def main():
             # Exit the play loop after recording one video
             if timestep == args_cli.video_length:
                 break
-
+    last_sha = sha1_array(obs)
+    print("Last sha", last_sha)
     # close the simulator
     env.close()
 

@@ -155,6 +155,17 @@ class LocomotionEnv(DirectRLEnv):
         time_out = self.episode_length_buf >= self.max_episode_length - 1
         # died = self.torso_position[:, 2] < self.cfg.termination_height
         died = self.up_proj < self.cfg.termination_up_proj
+        # died = torch.zeros_like(self.up_proj, dtype=torch.bool)
+        z_pos = self.torso_position[:, 2]
+        lowest = self.torso_position.min(dim=0).values
+        highest = self.torso_position.max(dim=0).values
+
+        print("Lowest (x, y, z):", lowest)
+        print("Highest (x, y, z):", highest)
+        lowest_z_pos = lowest[2]
+        highest_z_pos = highest[2]
+        assert highest_z_pos < 6
+        assert lowest_z_pos > -2
         return died, time_out
 
     def _reset_idx(self, env_ids: torch.Tensor | None):
