@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from omni.isaac.lab.sensors import TiledCameraCfg
+from omni.isaac.lab.terrains import TerrainImporterCfg
 from omni.isaac.lab_assets.crab import CRAB_CFG
 
 import omni.isaac.lab.sim as sim_utils
@@ -34,19 +36,19 @@ class CrabEnvCfg(AntEnvCfg):
     sim: SimulationCfg = SimulationCfg(dt=1 / 250, render_interval=decimation,
                                        device="cpu", use_fabric=False
                                        )
-    # terrain = TerrainImporterCfg(
-    #     prim_path="/World/ground",
-    #     terrain_type="plane",
-    #     collision_group=-1,
-    #     physics_material=sim_utils.RigidBodyMaterialCfg(
-    #         friction_combine_mode="average",
-    #         restitution_combine_mode="average",
-    #         static_friction=1.0,
-    #         dynamic_friction=1.0,
-    #         restitution=0.0,
-    #     ),
-    #     debug_vis=False,
-    # )
+    terrain = TerrainImporterCfg(
+        prim_path="/World/ground",
+        terrain_type="plane",
+        collision_group=-1,
+        physics_material=sim_utils.RigidBodyMaterialCfg(
+            friction_combine_mode="average",
+            restitution_combine_mode="average",
+            static_friction=1.0,
+            dynamic_friction=1.0,
+            restitution=0.0,
+        ),
+        debug_vis=False,
+    )
 
     # scene
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=0.5, replicate_physics=True)
@@ -54,6 +56,16 @@ class CrabEnvCfg(AntEnvCfg):
     # robot
     robot: ArticulationCfg = CRAB_CFG.replace(prim_path="/World/envs/env_.*/Robot")
     joint_gears: list = [15] * 18
+    tiled_camera: TiledCameraCfg = TiledCameraCfg(
+        prim_path="/World/envs/env_.*/Camera",
+        offset=TiledCameraCfg.OffsetCfg(pos=(-5.0, 0.0, 2.0), rot=(1.0, 0.0, 0.0, 0.0), convention="world"),
+        data_types=["rgb"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+        ),
+        width=80,
+        height=80,
+    )
 
     heading_weight: float = 0.5
     up_weight: float = 0.1

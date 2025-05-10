@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+import numpy
+from omni.isaac.lab.sensors import TiledCameraCfg
+from omni.isaac.lab.utils.math import quat_from_euler_xyz
 from omni.isaac.lab_assets.ant import ANT_CFG
 
 import omni.isaac.lab.sim as sim_utils
@@ -16,7 +19,19 @@ from omni.isaac.lab.terrains import TerrainImporterCfg
 from omni.isaac.lab.utils import configclass
 
 from omni.isaac.lab_tasks.direct.locomotion.locomotion_env import LocomotionEnv
+from torch import tensor
+from omni.isaac.core.utils.rotations import euler_angles_to_quat
 
+DEG_TO_RAD = 3.141592653589793 / 180.0
+
+
+def to_quat(x, y, z):
+    x = tensor(x) * DEG_TO_RAD
+    y = tensor(y) * DEG_TO_RAD
+    z = tensor(z) * DEG_TO_RAD
+    return
+
+quat = euler_angles_to_quat(numpy.asarray([54, 0, 135]), degrees=True).tolist()
 
 @configclass
 class AntEnvCfg(DirectRLEnvCfg):
@@ -24,9 +39,20 @@ class AntEnvCfg(DirectRLEnvCfg):
     episode_length_s = 15.0
     decimation = 2
     action_scale = 0.5
-    action_space = 8
-    observation_space = 36
+
+    tiled_camera: TiledCameraCfg = TiledCameraCfg(
+        prim_path="/World/envs/env_.*/Robot/torso/Camera",
+        offset=TiledCameraCfg.OffsetCfg(pos=(3.5, 3.5, 3.5), rot=quat, convention="opengl"),
+        data_types=["rgb"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+        ),
+        width=80,
+        height=80,
+    )
+    action_space = 1
     state_space = 0
+    observation_space = [tiled_camera.height, tiled_camera.width, 3]
 
     # simulation
     sim: SimulationCfg = SimulationCfg(dt=1 / 120, render_interval=decimation)
@@ -45,7 +71,7 @@ class AntEnvCfg(DirectRLEnvCfg):
     )
 
     # scene
-    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=4.0, replicate_physics=True)
+    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=128, env_spacing=4.0, replicate_physics=True)
 
     # robot
     robot: ArticulationCfg = ANT_CFG.replace(prim_path="/World/envs/env_.*/Robot")
