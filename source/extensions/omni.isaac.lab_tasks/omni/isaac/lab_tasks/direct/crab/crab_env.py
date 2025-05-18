@@ -25,14 +25,15 @@ class CrabEnvCfg(AntEnvCfg):
     episode_length_s = 15.0
     decimation = 4
 
-    # action_scale = 6e-4 (works but way too fast)
-    action_scale = 2e-4
+    # action_scale = 6e-4 # (works but way too fast)
+    # action_scale = 2e-4
+    action_scale = 3e-3
     action_space = 18
     observation_space = 66
     state_space = 0
     sim_cfg = SimulationCfg(dt=1 / 250, render_interval=4,
                             # device="cpu", use_fabric=False,
-                            device="cuda:0", use_fabric=True
+                            device="cuda:0", use_fabric=False
                             )
     sim_cfg.physx.gpu_max_rigid_patch_count = 5 * 2 ** 17
     # simulation
@@ -50,38 +51,39 @@ class CrabEnvCfg(AntEnvCfg):
     #     ),
     #     debug_vis=False,
     # )
-    terrain = TerrainImporterCfg(
-        prim_path="/World/ground",
-        terrain_type="generator",
-        terrain_generator=ROUGH_TERRAINS_CFG,
-        physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
-            restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
-        ),
-        visual_material=sim_utils.MdlFileCfg(
-            mdl_path=f"{ISAACLAB_NUCLEUS_DIR}/Materials/TilesMarbleSpiderWhiteBrickBondHoned/TilesMarbleSpiderWhiteBrickBondHoned.mdl",
-            project_uvw=True,
-            texture_scale=(0.25, 0.25),
-        ),
-        debug_vis=False,
-    )
-
     # terrain = TerrainImporterCfg(
     #     prim_path="/World/ground",
-    #     terrain_type="usd",
-    #     usd_path="/home/kkona/Documents/research/drone_sim_lab/assets/worlds/water/Downloads/uploads_files_4241091_Beach-Rock/Beach-Rock/props/Beach-Rock_props.usd",
-    #     collision_group=-1,
+    #     terrain_type="generator",
+    #     terrain_generator=ROUGH_TERRAINS_CFG,
     #     physics_material=sim_utils.RigidBodyMaterialCfg(
-    #         friction_combine_mode="average",
-    #         restitution_combine_mode="average",
+    #         friction_combine_mode="multiply",
+    #         restitution_combine_mode="multiply",
     #         static_friction=1.0,
     #         dynamic_friction=1.0,
-    #         restitution=0.0,
+    #     ),
+    #     visual_material=sim_utils.MdlFileCfg(
+    #         mdl_path=f"{ISAACLAB_NUCLEUS_DIR}/Materials/TilesMarbleSpiderWhiteBrickBondHoned/TilesMarbleSpiderWhiteBrickBondHoned.mdl",
+    #         project_uvw=True,
+    #         texture_scale=(0.25, 0.25),
     #     ),
     #     debug_vis=False,
     # )
+
+    terrain = TerrainImporterCfg(
+        prim_path="/World/ground",
+        terrain_type="usd",
+        usd_path="/home/kkona/Documents/research/drone_sim_lab/assets/worlds/water/fluid_dynamics.usd",
+        collision_group=-1,
+        # physics_material=sim_utils.RigidBodyMaterialCfg(
+        #     friction_combine_mode="average",
+        #     restitution_combine_mode="average",
+        #     static_friction=1.0,
+        #     dynamic_friction=1.0,
+        #     restitution=0.0,
+        # ),
+        debug_vis=False,
+    )
+
 
     # scene
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=0.5, replicate_physics=True)

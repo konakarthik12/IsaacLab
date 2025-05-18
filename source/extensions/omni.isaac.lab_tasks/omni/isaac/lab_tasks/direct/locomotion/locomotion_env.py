@@ -54,7 +54,7 @@ class LocomotionEnv(DirectRLEnv):
     def _setup_scene(self):
         self.robot = Articulation(self.cfg.robot)
         # add ground plane
-        self.cfg.terrain.num_envs = self.scene.cfg.num_envs
+        self.cfg.terrain.num_envs = 1
         self.cfg.terrain.env_spacing = self.scene.cfg.env_spacing
         self.terrain = self.cfg.terrain.class_type(self.cfg.terrain)
         # clone, filter, and replicate
@@ -160,11 +160,11 @@ class LocomotionEnv(DirectRLEnv):
         lowest = self.torso_position.min(dim=0).values
         highest = self.torso_position.max(dim=0).values
 
-        print("Lowest (x, y, z):", lowest)
-        print("Highest (x, y, z):", highest)
+        # print("Lowest (x, y, z):", lowest)
+        # print("Highest (x, y, z):", highest)
         lowest_z_pos = lowest[2]
         highest_z_pos = highest[2]
-        assert highest_z_pos < 6
+        assert highest_z_pos < 12
         assert lowest_z_pos > -2
         return died, time_out
 
